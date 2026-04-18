@@ -1,8 +1,8 @@
-=== AI SEO & Analytics - GEO Optimization, AI Visibility and Rank, AI Site Readiness Audit by MeasureBoard ===
+=== MeasureBoard – AI SEO & Analytics ===
 Contributors: measureboard
 Tags: seo, ai seo, analytics, geo optimization, woocommerce analytics, ai rank tracker, agent readiness, llms.txt, structured data, ai search
 Requires at least: 5.8
-Tested up to: 6.7
+Tested up to: 6.9
 Requires PHP: 7.4
 Stable tag: 1.0.0
 License: GPLv2 or later

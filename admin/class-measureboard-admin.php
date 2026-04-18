@@ -123,7 +123,7 @@ class MeasureBoard_Admin {
             wp_send_json_error( 'Unauthorized' );
         }
 
-        $property_id = sanitize_text_field( $_POST['property_id'] ?? '' );
+        $property_id = sanitize_text_field( wp_unslash( $_POST['property_id'] ?? '' ) );
         if ( empty( $property_id ) ) {
             wp_send_json_error( 'Property ID is required. Find it in your MeasureBoard dashboard URL.' );
         }

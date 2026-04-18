@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: AI SEO & Analytics - GEO Optimization, AI Visibility and Rank, AI Site Readiness Audit by MeasureBoard
+ * Plugin Name: MeasureBoard – AI SEO & Analytics
  * Plugin URI: https://www.measureboard.com/tools
  * Description: Free AI-powered SEO analytics, GEO optimization, AI agent readiness checks, AI rank tracking, and WooCommerce sales attribution. Connect to MeasureBoard for AI-powered insights.
  * Version: 1.0.0
@@ -10,7 +10,7 @@
  * Author URI: https://www.measureboard.com
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: measureboard
+ * Text Domain: measureboard-ai-seo-analytics
  * Domain Path: /languages
  *
  * @package MeasureBoard
