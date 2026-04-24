@@ -35,10 +35,14 @@ if ( is_admin() ) {
     require_once MEASUREBOARD_PLUGIN_DIR . 'admin/class-measureboard-admin.php';
 }
 
-// WooCommerce integration (loaded only when WooCommerce is active)
-if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ), true ) ) {
-    require_once MEASUREBOARD_PLUGIN_DIR . 'includes/class-measureboard-woocommerce.php';
-}
+// WooCommerce integration (loaded only when WooCommerce is active).
+// Hooked on plugins_loaded so WooCommerce has had a chance to register its
+// main class — cleaner than probing the active_plugins filter from the root.
+add_action( 'plugins_loaded', function() {
+    if ( class_exists( 'WooCommerce' ) ) {
+        require_once MEASUREBOARD_PLUGIN_DIR . 'includes/class-measureboard-woocommerce.php';
+    }
+}, 20 );
 
 /**
  * Initialize the plugin.

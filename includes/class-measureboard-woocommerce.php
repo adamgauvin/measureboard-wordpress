@@ -86,27 +86,40 @@ class MeasureBoard_WooCommerce {
 
     /**
      * Get top products by revenue.
+     *
+     * Uses a direct DB aggregation because WooCommerce's order-item APIs
+     * return individual rows; computing "top 20 by SUM(revenue) over 90 days"
+     * via those APIs would load tens of thousands of order items into PHP.
+     * Results are cached for 10 minutes — the data is used for dashboard
+     * reporting, not transactional display, so brief staleness is acceptable.
      */
     private function get_top_products() {
-        global $wpdb;
+        $cache_key   = 'measureboard_top_products_90d';
+        $cache_group = 'measureboard';
 
-        $results = $wpdb->get_results( $wpdb->prepare(
-            "SELECT oi.order_item_name as name,
-                    SUM(oim_qty.meta_value) as quantity,
-                    SUM(oim_total.meta_value) as revenue,
-                    oim_pid.meta_value as product_id
-             FROM {$wpdb->prefix}woocommerce_order_items oi
-             JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim_qty ON oi.order_item_id = oim_qty.order_item_id AND oim_qty.meta_key = '_qty'
-             JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim_total ON oi.order_item_id = oim_total.order_item_id AND oim_total.meta_key = '_line_total'
-             JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim_pid ON oi.order_item_id = oim_pid.order_item_id AND oim_pid.meta_key = '_product_id'
-             JOIN {$wpdb->posts} p ON oi.order_id = p.ID AND p.post_status IN ('wc-completed','wc-processing')
-             WHERE oi.order_item_type = 'line_item'
-               AND p.post_date >= %s
-             GROUP BY oim_pid.meta_value
-             ORDER BY revenue DESC
-             LIMIT 20",
-            gmdate( 'Y-m-d', strtotime( '-90 days' ) )
-        ), ARRAY_A );
+        $results = wp_cache_get( $cache_key, $cache_group );
+        if ( false === $results ) {
+            global $wpdb;
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Cross-table aggregation; results cached via wp_cache_set below.
+            $results = $wpdb->get_results( $wpdb->prepare(
+                "SELECT oi.order_item_name as name,
+                        SUM(oim_qty.meta_value) as quantity,
+                        SUM(oim_total.meta_value) as revenue,
+                        oim_pid.meta_value as product_id
+                 FROM {$wpdb->prefix}woocommerce_order_items oi
+                 JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim_qty ON oi.order_item_id = oim_qty.order_item_id AND oim_qty.meta_key = '_qty'
+                 JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim_total ON oi.order_item_id = oim_total.order_item_id AND oim_total.meta_key = '_line_total'
+                 JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim_pid ON oi.order_item_id = oim_pid.order_item_id AND oim_pid.meta_key = '_product_id'
+                 JOIN {$wpdb->posts} p ON oi.order_id = p.ID AND p.post_status IN ('wc-completed','wc-processing')
+                 WHERE oi.order_item_type = 'line_item'
+                   AND p.post_date >= %s
+                 GROUP BY oim_pid.meta_value
+                 ORDER BY revenue DESC
+                 LIMIT 20",
+                gmdate( 'Y-m-d', strtotime( '-90 days' ) )
+            ), ARRAY_A );
+            wp_cache_set( $cache_key, $results, $cache_group, 10 * MINUTE_IN_SECONDS );
+        }
 
         return array_map( function( $row ) {
             $product = wc_get_product( (int) $row['product_id'] );
