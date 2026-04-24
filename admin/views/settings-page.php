@@ -9,7 +9,7 @@
  */
 
 defined( 'ABSPATH' ) || exit;
-$nonce = wp_create_nonce( 'measureboard_nonce' );
+$measureboard_nonce = wp_create_nonce( 'measureboard_nonce' );
 ?>
 <div class="wrap mb-wrap">
     <h1>
@@ -39,7 +39,7 @@ $nonce = wp_create_nonce( 'measureboard_nonce' );
                 Not connected. Enter your MeasureBoard Property ID to connect.
             </div>
             <ol class="mb-steps">
-                <li>Go to <a href="https://www.measureboard.com/auth/signup" target="_blank">measureboard.com</a> and create a free account (takes &lt;30 seconds)</li>
+                <li>Go to <a href="https://www.measureboard.com/auth/signup?utm_source=wordpress-plugin" target="_blank">measureboard.com</a> and create a free account (takes &lt;30 seconds)</li>
                 <li>Copy your Property ID from the dashboard URL (e.g. <code>2I4AiZXM</code>)</li>
                 <li>Paste it below and click Connect</li>
             </ol>
@@ -65,11 +65,11 @@ $nonce = wp_create_nonce( 'measureboard_nonce' );
             </div>
         </div>
         <table class="mb-checks-table">
-            <?php foreach ( $agent_readiness['checks'] as $check ) : ?>
-                <tr class="<?php echo $check['passed'] ? 'mb-pass' : 'mb-fail'; ?>">
-                    <td class="mb-check-icon"><?php echo $check['passed'] ? '&#10003;' : '&#10007;'; ?></td>
-                    <td><?php echo esc_html( $check['name'] ); ?></td>
-                    <td class="mb-check-status"><?php echo $check['passed'] ? 'Pass' : 'Fail'; ?></td>
+            <?php foreach ( $agent_readiness['checks'] as $measureboard_check ) : ?>
+                <tr class="<?php echo $measureboard_check['passed'] ? 'mb-pass' : 'mb-fail'; ?>">
+                    <td class="mb-check-icon"><?php echo $measureboard_check['passed'] ? '&#10003;' : '&#10007;'; ?></td>
+                    <td><?php echo esc_html( $measureboard_check['name'] ); ?></td>
+                    <td class="mb-check-status"><?php echo $measureboard_check['passed'] ? 'Pass' : 'Fail'; ?></td>
                 </tr>
             <?php endforeach; ?>
         </table>
@@ -147,11 +147,11 @@ $nonce = wp_create_nonce( 'measureboard_nonce' );
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ( $jsonld_recs as $rec ) : ?>
+                <?php foreach ( $jsonld_recs as $measureboard_rec ) : ?>
                     <tr>
-                        <td><code><?php echo esc_html( $rec['type'] ); ?></code></td>
-                        <td><?php echo esc_html( $rec['description'] ); ?></td>
-                        <td class="mb-subtext"><?php echo esc_html( $rec['location'] ); ?></td>
+                        <td><code><?php echo esc_html( $measureboard_rec['type'] ); ?></code></td>
+                        <td><?php echo esc_html( $measureboard_rec['description'] ); ?></td>
+                        <td class="mb-subtext"><?php echo esc_html( $measureboard_rec['location'] ); ?></td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -172,7 +172,7 @@ $nonce = wp_create_nonce( 'measureboard_nonce' );
 
 <script>
 (function($) {
-    var nonce = '<?php echo esc_js( $nonce ); ?>';
+    var nonce = '<?php echo esc_js( $measureboard_nonce ); ?>';
 
     $('#mb-connect').on('click', function() {
         var btn = $(this);
