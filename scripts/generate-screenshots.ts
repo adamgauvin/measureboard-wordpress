@@ -5,7 +5,11 @@
 import { chromium } from "playwright";
 import { writeFileSync } from "fs";
 
-const OUTPUT_DIR = "/Users/a/Projects/measureboard-wordpress/assets";
+// Screenshots are NOT shipped inside the plugin zip. They live under
+// wp-org-assets/ and are uploaded separately to the WordPress.org SVN
+// /assets/ directory after the plugin is approved. See:
+// https://developer.wordpress.org/plugins/wordpress-org/plugin-assets/
+const OUTPUT_DIR = "/Users/a/Projects/measureboard-wordpress/wp-org-assets";
 
 // WordPress admin styles (approximation)
 const WP_STYLES = `

@@ -14,7 +14,11 @@ defined( 'ABSPATH' ) || exit;
 class MeasureBoard_Geo {
 
     public static function init() {
-        self::register_rewrite_rules();
+        // Register on the 'init' hook only. Calling add_rewrite_rule() directly
+        // here would fire during 'plugins_loaded', before $wp_rewrite is
+        // initialized, which causes a fatal "Call to a member function add_rule()
+        // on null". The activation hook in measureboard.php handles the initial
+        // flush_rewrite_rules() call.
         add_action( 'init', array( __CLASS__, 'register_rewrite_rules' ) );
         add_filter( 'template_redirect', array( __CLASS__, 'serve_llms_txt' ) );
     }
@@ -23,7 +27,9 @@ class MeasureBoard_Geo {
      * Register rewrite rule for /llms.txt
      */
     public static function register_rewrite_rules() {
-        add_rewrite_rule( '^llms\.txt$', 'index.php?measureboard_llms_txt=1', 'top' );
+        // Match with or without trailing slash so WP's canonical-URL redirect
+        // (which appends a trailing slash to non-file paths) routes correctly.
+        add_rewrite_rule( '^llms\.txt/?$', 'index.php?measureboard_llms_txt=1', 'top' );
         add_rewrite_tag( '%measureboard_llms_txt%', '1' );
     }
 
@@ -301,20 +307,34 @@ class MeasureBoard_Geo {
 
     /**
      * Run agent readiness checks against the local site.
+     *
+     * Result is cached via a 1-hour transient so we don't make five sequential
+     * outbound HTTP calls on every admin page load. The previous version called
+     * wp_remote_get/wp_remote_head five times with 5-10s timeouts each, which
+     * blew past PHP's default 30s max_execution_time on hosts where the site
+     * isn't externally reachable from itself (single-threaded servers, internal
+     * staging behind auth, certain loopback NAT setups). Per-call timeouts are
+     * also tightened so the total worst case stays well under 30s.
      */
     public static function get_agent_readiness() {
+        $cache_key = 'measureboard_agent_readiness';
+        $cached    = get_transient( $cache_key );
+        if ( false !== $cached && is_array( $cached ) ) {
+            return $cached;
+        }
+
         $home_url = get_home_url();
         $checks   = array();
 
         // 1. robots.txt
         $robots_url = $home_url . '/robots.txt';
-        $robots_res = wp_remote_get( $robots_url, array( 'timeout' => 5 ) );
+        $robots_res = wp_remote_get( $robots_url, array( 'timeout' => 3 ) );
         $robots_ok  = ! is_wp_error( $robots_res ) && wp_remote_retrieve_response_code( $robots_res ) === 200;
         $robots_txt = $robots_ok ? wp_remote_retrieve_body( $robots_res ) : '';
         $checks[]   = array( 'name' => 'robots.txt', 'passed' => $robots_ok );
 
         // 2. Sitemap
-        $sitemap_res = wp_remote_head( $home_url . '/sitemap.xml', array( 'timeout' => 5 ) );
+        $sitemap_res = wp_remote_head( $home_url . '/sitemap.xml', array( 'timeout' => 3 ) );
         $sitemap_ok  = ! is_wp_error( $sitemap_res ) && wp_remote_retrieve_response_code( $sitemap_res ) === 200;
         $has_ref     = (bool) preg_match( '/^Sitemap:/im', $robots_txt );
         $checks[]    = array( 'name' => 'Sitemap', 'passed' => $sitemap_ok && $has_ref );
@@ -330,7 +350,7 @@ class MeasureBoard_Geo {
         $checks[] = array( 'name' => 'AI Bot Rules', 'passed' => ! empty( $ai_bots_found ) );
 
         // 4. llms.txt
-        $llms_res = wp_remote_head( $home_url . '/llms.txt', array( 'timeout' => 5 ) );
+        $llms_res = wp_remote_head( $home_url . '/llms.txt', array( 'timeout' => 3 ) );
         $llms_ok  = ! is_wp_error( $llms_res ) && wp_remote_retrieve_response_code( $llms_res ) === 200;
         $checks[] = array( 'name' => 'llms.txt', 'passed' => $llms_ok );
 
@@ -338,13 +358,13 @@ class MeasureBoard_Geo {
         $has_llms_ref = (bool) preg_match( '/^LLMS:/im', $robots_txt );
         $checks[]     = array( 'name' => 'LLMS Directive', 'passed' => $has_llms_ref );
 
-        // 6. JSON-LD on homepage
-        $home_res   = wp_remote_get( $home_url, array( 'timeout' => 10 ) );
+        // 6. JSON-LD on homepage (one fetch reused for #6 and #7)
+        $home_res   = wp_remote_get( $home_url, array( 'timeout' => 5 ) );
         $home_html  = ! is_wp_error( $home_res ) ? wp_remote_retrieve_body( $home_res ) : '';
         $has_jsonld = (bool) preg_match( '/application\/ld\+json/i', $home_html );
         $checks[]   = array( 'name' => 'JSON-LD Schema', 'passed' => $has_jsonld );
 
-        // 7. Link headers
+        // 7. Link headers (reuse the response from #6 — no extra HTTP call)
         $link_header = '';
         if ( ! is_wp_error( $home_res ) ) {
             $link_header = wp_remote_retrieve_header( $home_res, 'Link' );
@@ -353,7 +373,7 @@ class MeasureBoard_Geo {
 
         // 8. Markdown negotiation
         $md_res     = wp_remote_get( $home_url, array(
-            'timeout' => 5,
+            'timeout' => 3,
             'headers' => array( 'Accept' => 'text/markdown' ),
         ) );
         $md_ct      = ! is_wp_error( $md_res ) ? wp_remote_retrieve_header( $md_res, 'content-type' ) : '';
@@ -363,11 +383,15 @@ class MeasureBoard_Geo {
         $passed = count( array_filter( $checks, function( $c ) { return $c['passed']; } ) );
         $score  = round( ( $passed / count( $checks ) ) * 100 );
 
-        return array(
+        $result = array(
             'score'  => $score,
             'checks' => $checks,
             'passed' => $passed,
             'total'  => count( $checks ),
         );
+
+        set_transient( $cache_key, $result, HOUR_IN_SECONDS );
+
+        return $result;
     }
 }

@@ -49,6 +49,25 @@ class MeasureBoard_Admin {
             array(),
             MEASUREBOARD_VERSION
         );
+
+        // The settings page only needs the JS; the dashboard widget is read-only.
+        if ( 'toplevel_page_measureboard' === $hook ) {
+            wp_enqueue_script(
+                'measureboard-admin',
+                MEASUREBOARD_PLUGIN_URL . 'admin/js/measureboard-admin.js',
+                array( 'jquery' ),
+                MEASUREBOARD_VERSION,
+                true
+            );
+            wp_localize_script(
+                'measureboard-admin',
+                'measureboardAdmin',
+                array(
+                    'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                    'nonce'   => wp_create_nonce( 'measureboard_nonce' ),
+                )
+            );
+        }
     }
 
     /**

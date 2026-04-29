@@ -1,14 +1,14 @@
 === MeasureBoard – AI SEO & Analytics ===
 Contributors: measureboard
-Tags: seo, ai seo, analytics, geo optimization, woocommerce analytics, ai rank tracker, agent readiness, llms.txt, structured data, ai search
+Tags: ai seo, geo optimization, ai rank tracker, llms.txt, woocommerce analytics
 Requires at least: 5.8
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Free AI-powered SEO analytics with GEO optimization, AI agent readiness audit, llms.txt generator, AI rank tracking, and WooCommerce sales attribution.
+Free AI SEO analytics with GEO optimization, AI agent readiness audit, llms.txt generator, AI rank tracking, and WooCommerce sales attribution.
 
 == Description ==
 
@@ -59,6 +59,29 @@ When WooCommerce is active, the plugin automatically detects it and enables:
 * **No tracking** - The plugin does not add any tracking scripts to your frontend
 * **Data stays yours** - Disconnect at any time to stop syncing. Delete your MeasureBoard account to remove all data
 
+== External services ==
+
+This plugin connects to the MeasureBoard.com API (https://www.measureboard.com/api) to provide AI-powered SEO and analytics features. Connecting is **optional** — the built-in tools (Agent Readiness Audit, llms.txt generator, JSON-LD recommendations, robots.txt recommendations) work entirely on your site without any external request. The plugin only contacts MeasureBoard.com after you enter a Property ID and click Connect on the settings screen.
+
+What the service is and what it is used for:
+
+MeasureBoard is an AI SEO and analytics platform that ingests your published content and site metadata to generate AI-powered traffic reports, AI rank tracking, content health analysis, and (when WooCommerce is active) sales attribution.
+
+What data is sent and when:
+
+* On Connect (one-time, when the user clicks Connect on the settings page): site URL, home URL, site name, the Property ID you entered, a plugin-generated site key + secret used to authenticate later requests, the WordPress version, the plugin version, and whether WooCommerce is active. Endpoint: `POST https://www.measureboard.com/api/wordpress/connect`.
+* On Connect and once per day thereafter (site health sync): WordPress version, PHP version, site URL, home URL, site name, site description, active theme name and version, the slug + name + version of each active plugin, whether WooCommerce is active, whether the site is multisite, permalink structure, timezone, locale, published post and page counts, and whether the site uses SSL. Endpoint: `POST https://www.measureboard.com/api/wordpress/site-health`.
+* On Connect and once per day thereafter (content sync): for every published post and page — title, slug, URL, excerpt, word count, publish date, modified date, author name, featured image URL, and any meta title / meta description / focus keyword that Yoast SEO, Rank Math, or All in One SEO has stored for that post. Endpoint: `POST https://www.measureboard.com/api/wordpress/content`.
+* On Connect and once per day thereafter, **only if WooCommerce is active** (sales attribution): order totals, order dates, order statuses, the referring source/medium/campaign saved with each order, and product titles + revenue + stock status for the top products. No customer names, addresses, emails, or payment details are sent. Endpoint: `POST https://www.measureboard.com/api/wordpress/woocommerce`.
+* On Disconnect (when the user clicks Disconnect): a single request that tells MeasureBoard to stop accepting data from this site. Endpoint: `DELETE https://www.measureboard.com/api/wordpress/disconnect`.
+
+All requests include the site key + secret generated on plugin activation so MeasureBoard can authenticate the site they came from. No data is sent to any other domain.
+
+This service is provided by MeasureBoard.com:
+
+* Terms of Service: https://www.measureboard.com/terms
+* Privacy Policy: https://www.measureboard.com/privacy
+
 == Installation ==
 
 1. Upload the `measureboard` folder to `/wp-content/plugins/`
@@ -101,6 +124,11 @@ Yes. The plugin and MeasureBoard Starter plan are both free. Paid plans ($12/mon
 5. MeasureBoard connection settings
 
 == Changelog ==
+
+= 1.0.1 =
+* Move admin settings page JavaScript out of an inline `<script>` block into a separate file enqueued via wp_enqueue_script
+* Document the MeasureBoard.com external service in the readme (what data is sent, when, and links to Terms / Privacy)
+* Remove WordPress.org directory screenshots from the plugin zip (they belong in the SVN /assets/ directory, not the plugin code)
 
 = 1.0.0 =
 * Initial release

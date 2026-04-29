@@ -3,7 +3,7 @@
  * Plugin Name: MeasureBoard – AI SEO & Analytics
  * Plugin URI: https://www.measureboard.com/tools
  * Description: Free AI-powered SEO analytics, GEO optimization, AI agent readiness checks, AI rank tracking, and WooCommerce sales attribution. Connect to MeasureBoard for AI-powered insights.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Author: MeasureBoard
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'MEASUREBOARD_VERSION', '1.0.0' );
+define( 'MEASUREBOARD_VERSION', '1.0.1' );
 define( 'MEASUREBOARD_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MEASUREBOARD_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'MEASUREBOARD_API_BASE', 'https://www.measureboard.com/api' );
